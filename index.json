@@ -10,10 +10,25 @@
       "version": "1.0.0",
       "description": "Harmonizes VS Code, VSCodium, and Antigravity IDE themes and colors with Hyprconf obsidian palettes and wallpaper accents.",
       "author": "shell-ninja",
-      "icon": "code",
+      "icon": "code-theme-sync",
       "category": "Theming & Integrations",
       "path": "code-theme-sync",
-      "min_version": "v1.0.3"
+      "min_version": "v1.0.3",
+      "tagline": "Live theme & obsidian palette synchronization for VS Code, VSCodium & Antigravity IDE",
+      "features": [
+        "Zero-Restart Live Injection: Injects color tokens directly into running editor sessions.",
+        "Obsidian Glass Surfaces: Replaces default chrome with deep obsidian glass and subtle accent rims.",
+        "Wallpaper Harmony: Automatically synchronizes editor background, sidebar & syntax with active wallpaper.",
+        "Terminal ANSI Synchronization: Matches integrated editor terminal colors with Kitty terminal.",
+        "Safe & Non-Destructive: Automatic backup and instant restore on uninstallation."
+      ],
+      "targets": [
+        "Antigravity IDE",
+        "VSCodium",
+        "VS Code",
+        "Code - OSS",
+        "Cursor"
+      ]
     }
   ]
 }
