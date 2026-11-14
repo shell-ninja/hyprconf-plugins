@@ -1,58 +1,38 @@
-# Hyprconf Plugins (`hyprconf-plugins`)
+# Hyprconf Plugins
 
-The official community and verified plugin catalog for the **[Hyprconf](https://github.com/shell-ninja/hyprconf)** obsidian-themed desktop environment.
+The official plugin repository for the [Hyprconf](https://github.com/shell-ninja/hyprconf) desktop environment.
 
 ---
 
-## 📦 Official Plugins
+## Plugins
 
 | Plugin | Category | Description |
 |---|---|---|
-| **[code-theme-sync](./code-theme-sync/)** | Theming & Integrations | Harmonizes VS Code, VSCodium, and Antigravity IDE themes and colors with active wallpaper obsidian palettes and accent tones. |
+| [code-theme-sync](./code-theme-sync/) | Theming | Harmonizes VS Code, VSCodium, and Antigravity IDE themes and colors with the active wallpaper palette. |
 
 ---
 
-## 🎨 Installing & Managing Plugins
+## Installation
 
-Plugins are managed directly from the **Hyprconf Settings Studio**:
+Plugins are browsed, installed, and managed directly from the **Hyprconf Settings Studio** (`Super + Shift + S` -> Plugins).
 
-1. Open Settings Studio (`Super + Shift + S` or via Dynamic Island / Top Bar).
-2. Navigate to the **Plugins** section.
-3. Browse the official catalog, preview plugin details, and install with a single click.
-4. Toggle plugins on or off with instant zero-restart state switching.
-
-For headless environments and automation, the native CLI helper is also available:
-
-```bash
-# List available and installed plugins
-hyprconf-plugin list
-
-# Install a plugin from the registry
-hyprconf-plugin install <plugin-id>
-
-# Toggle on or off
-hyprconf-plugin enable <plugin-id>
-hyprconf-plugin disable <plugin-id>
-
-# Uninstall
-hyprconf-plugin remove <plugin-id>
-```
+To install manually, download or drag and drop a plugin directory into the Settings Studio window.
 
 ---
 
-## 🛠️ Authoring a Plugin
+## Plugin Development
 
-Every plugin in this repository is a self-contained directory with a standard `plugin.json` manifest:
+Each plugin resides in its own folder with a `plugin.json` manifest:
 
 ```json
 {
   "id": "my-plugin",
   "name": "My Plugin",
   "version": "1.0.0",
-  "description": "Short summary of what this plugin adds to Hyprconf...",
-  "author": "your-github-username",
-  "icon": "sparkles",
-  "category": "Widgets",
+  "description": "Description of what this plugin does.",
+  "author": "your-name",
+  "icon": "code",
+  "category": "Theming",
   "entry": "bin/run.sh",
   "hooks": {
     "on_color_change": "bin/sync.py",
@@ -64,8 +44,4 @@ Every plugin in this repository is a self-contained directory with a standard `p
 }
 ```
 
-### Contribution Workflow
-1. Fork this repository.
-2. Add your plugin folder under `./<your-plugin-id>/`.
-3. Register your plugin in [`index.json`](./index.json).
-4. Submit a Pull Request!
+To contribute a plugin, fork this repository, add your plugin folder, add an entry to `index.json`, and open a pull request.
