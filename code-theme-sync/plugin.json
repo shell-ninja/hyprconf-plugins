@@ -1,0 +1,27 @@
+{
+  "id": "code-theme-sync",
+  "name": "Code Theme Synchronizer",
+  "version": "1.0.0",
+  "description": "Harmonizes VS Code, VSCodium, and Antigravity IDE themes and colors with Hyprconf obsidian palettes and wallpaper accents.",
+  "author": "shell-ninja",
+  "icon": "code",
+  "category": "Theming & Integrations",
+  "entry": "bin/sync-theme.py",
+  "hooks": {
+    "on_color_change": "bin/sync-theme.py --sync",
+    "on_wallpaper_change": "bin/sync-theme.py --sync"
+  },
+  "settings": {
+    "enabled": true,
+    "mode": "hybrid",
+    "targets": [
+      "antigravity",
+      "vscodium",
+      "vscode"
+    ],
+    "sync_ui": true,
+    "sync_syntax": true,
+    "sync_terminal": true,
+    "obsidian_depth": "deep"
+  }
+}

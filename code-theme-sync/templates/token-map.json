@@ -1,0 +1,33 @@
+{
+  "description": "Hyprconf Obsidian to VS Code / Codium / Antigravity IDE token mapping reference",
+  "surfaces": {
+    "titleBar": "#0a0a0d",
+    "activityBar": "#0a0a0d",
+    "statusBar": "#0a0a0d",
+    "tabsGutter": "#0a0a0d",
+    "sideBar": "#111116",
+    "quickInput": "#111116",
+    "editorWidget": "#111116",
+    "editorCanvas": "#0d0d12",
+    "terminalCanvas": "#0d0d12",
+    "inputs": "#16161e",
+    "cardElevated": "#16161e"
+  },
+  "accents": {
+    "primary": "colors.accent || colors.primary",
+    "secondary": "colors.secondary",
+    "glassRim": "colors.accent + 0.25 (alpha)",
+    "focusRim": "colors.accent + 0.50 (alpha)",
+    "badgeBackground": "colors.accent",
+    "badgeForeground": "#0a0a0d"
+  },
+  "syntax": {
+    "keywords": "colors.accent",
+    "strings": "colors.color2",
+    "functions": "colors.color4",
+    "numbers": "colors.color3",
+    "types": "colors.secondary",
+    "comments": "colors.muted",
+    "variables": "colors.foreground"
+  }
+}
