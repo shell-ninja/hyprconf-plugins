@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1838"/>
+      <stop offset="50%" stop-color="#120f24"/>
+      <stop offset="100%" stop-color="#0a0814"/>
+    </linearGradient>
+    <radialGradient id="glowL3" cx="20%" cy="20%" r="55%">
+      <stop offset="0%" stop-color="#d946ef" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#d946ef" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowR3" cx="80%" cy="80%" r="55%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="braceL3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f472b6"/>
+      <stop offset="50%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+    <linearGradient id="braceR3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <linearGradient id="rainbowSweep" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ec4899"/>
+      <stop offset="33%" stop-color="#8b5cf6"/>
+      <stop offset="66%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <filter id="bloom3" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad3)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glowL3)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glowR3)"/>
+  <rect width="508" height="508" x="2" y="2" rx="110" fill="none" stroke="#c084fc" stroke-width="2" stroke-opacity="0.25"/>
+
+  <!-- Left Brace { -->
+  <g filter="url(#bloom3)">
+    <path d="M 120 132 C 96 132, 80 148, 80 174 L 80 224 C 80 242, 64 256, 48 256 C 64 256, 80 270, 80 288 L 80 338 C 80 364, 96 380, 120 380"
+          fill="none" stroke="url(#braceL3)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Right Brace } -->
+  <g filter="url(#bloom3)">
+    <path d="M 392 132 C 416 132, 432 148, 432 174 L 432 224 C 432 242, 448 256, 464 256 C 448 256, 432 270, 432 288 L 432 338 C 432 364, 416 380, 392 380"
+          fill="none" stroke="url(#braceR3)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Sweeping Paint Ring / Arc across center -->
+  <g filter="url(#bloom3)">
+    <!-- Broad paint arc -->
+    <path d="M 145 285 C 175 350, 270 360, 310 300 C 345 250, 310 180, 240 185 C 190 190, 160 235, 175 270"
+          fill="none" stroke="url(#rainbowSweep)" stroke-width="16" stroke-linecap="round"/>
+    <circle cx="150" cy="275" r="6" fill="#ec4899"/>
+    <circle cx="210" cy="350" r="5" fill="#8b5cf6"/>
+    <circle cx="315" cy="310" r="6.5" fill="#06b6d4"/>
+    <circle cx="270" cy="185" r="5" fill="#f59e0b"/>
+  </g>
+
+  <!-- Brush coming into the arc -->
+  <g filter="url(#bloom3)" transform="rotate(-42, 270, 240)">
+    <path d="M 260 40 C 260 28, 278 28, 278 40 L 282 155 L 256 155 Z" fill="#334155"/>
+    <rect x="254" y="155" width="30" height="26" rx="3" fill="#cbd5e1"/>
+    <path d="M 254 181 L 250 222 C 250 242, 262 258, 269 265 C 276 258, 288 242, 288 222 L 284 181 Z" fill="#06b6d4"/>
+    <path d="M 251 222 C 255 238, 265 250, 269 263 C 273 250, 283 238, 287 222 C 280 230, 258 230, 251 222 Z" fill="#f59e0b"/>
+  </g>
+</svg>

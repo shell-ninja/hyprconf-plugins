@@ -10,7 +10,7 @@
       "version": "1.0.0",
       "description": "Harmonizes VS Code, VSCodium, and Antigravity IDE themes and colors with Hyprconf obsidian palettes and wallpaper accents.",
       "author": "shell-ninja",
-      "icon": "code-theme-sync",
+      "icon": "assets/icon.png",
       "category": "Theming & Integrations",
       "path": "code-theme-sync",
       "min_version": "v1.0.3",

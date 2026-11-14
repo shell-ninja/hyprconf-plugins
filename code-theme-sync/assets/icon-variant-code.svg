@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#191c38"/>
+      <stop offset="50%" stop-color="#111324"/>
+      <stop offset="100%" stop-color="#0a0b14"/>
+    </linearGradient>
+    <radialGradient id="glowL2" cx="20%" cy="20%" r="55%">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#a855f7" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowR2" cx="80%" cy="80%" r="55%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="braceL2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e879f9"/>
+      <stop offset="50%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#818cf8"/>
+    </linearGradient>
+    <linearGradient id="braceR2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#2dd4bf"/>
+    </linearGradient>
+
+    <filter id="bloom2" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad2)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glowL2)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glowR2)"/>
+  <rect width="508" height="508" x="2" y="2" rx="110" fill="none" stroke="#818cf8" stroke-width="2" stroke-opacity="0.25"/>
+
+  <!-- Left Brace { -->
+  <g filter="url(#bloom2)">
+    <path d="M 106 132 C 84 132, 68 148, 68 174 L 68 224 C 68 242, 54 256, 38 256 C 54 256, 68 270, 68 288 L 68 338 C 68 364, 84 380, 106 380"
+          fill="none" stroke="url(#braceL2)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Right Brace } -->
+  <g filter="url(#bloom2)">
+    <path d="M 406 132 C 428 132, 444 148, 444 174 L 444 224 C 444 242, 458 256, 474 256 C 458 256, 444 270, 444 288 L 444 338 C 444 364, 428 380, 406 380"
+          fill="none" stroke="url(#braceR2)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Left Code Syntax Bars (Being Colored) -->
+  <g filter="url(#bloom2)">
+    <rect x="100" y="180" width="55" height="12" rx="6" fill="#64748b"/>
+    <rect x="100" y="210" width="85" height="12" rx="6" fill="#475569"/>
+    <rect x="100" y="240" width="70" height="12" rx="6" fill="#475569"/>
+    <rect x="100" y="270" width="95" height="12" rx="6" fill="#64748b"/>
+    <rect x="100" y="300" width="60" height="12" rx="6" fill="#475569"/>
+    <rect x="100" y="330" width="80" height="12" rx="6" fill="#64748b"/>
+  </g>
+
+  <!-- Right Colored Theme Tokens (Vibrant Palette Output) -->
+  <g filter="url(#bloom2)">
+    <rect x="330" y="180" width="75" height="12" rx="6" fill="#c084fc"/>
+    <rect x="330" y="210" width="85" height="12" rx="6" fill="#60a5fa"/>
+    <rect x="330" y="240" width="80" height="12" rx="6" fill="#22d3ee"/>
+    <rect x="330" y="270" width="85" height="12" rx="6" fill="#2dd4bf"/>
+    <rect x="330" y="300" width="65" height="12" rx="6" fill="#fbbf24"/>
+    <rect x="330" y="330" width="55" height="12" rx="6" fill="#f97316"/>
+  </g>
+
+  <!-- Glowing Rainbow Color Splash across center -->
+  <g filter="url(#bloom2)">
+    <path d="M 180 280 C 215 315, 260 290, 275 250 C 290 210, 315 200, 340 215"
+          fill="none" stroke="#38bdf8" stroke-width="14" stroke-linecap="round"/>
+    <path d="M 195 240 C 235 255, 265 230, 285 205 C 300 185, 325 180, 345 190"
+          fill="none" stroke="#c084fc" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="185" cy="305" r="5" fill="#f472b6"/>
+    <circle cx="330" cy="235" r="5.5" fill="#22d3ee"/>
+  </g>
+
+  <!-- Paintbrush Angled Downward -->
+  <g filter="url(#bloom2)" transform="rotate(-35, 255, 235)">
+    <path d="M 248 60 C 248 48, 264 48, 264 60 L 268 165 L 244 165 Z" fill="#334155"/>
+    <rect x="242" y="165" width="28" height="24" rx="3" fill="#cbd5e1"/>
+    <line x1="242" y1="177" x2="270" y2="177" stroke="#64748b" stroke-width="1.5"/>
+    <path d="M 242 189 L 238 226 C 238 245, 250 260, 256 265 C 262 260, 274 245, 274 226 L 270 189 Z" fill="#a855f7"/>
+    <path d="M 243 226 C 246 242, 252 254, 256 263 C 260 254, 266 242, 269 226 C 264 234, 248 234, 243 226 Z" fill="#38bdf8"/>
+  </g>
+</svg>
