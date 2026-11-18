@@ -1,0 +1,36 @@
+{
+  "id": "media-downloader",
+  "name": "Media Downloader",
+  "version": "1.0.0",
+  "description": "Universal video downloader and audio extractor for YouTube, Reddit, Instagram, Facebook, TikTok, X and 1,800+ sites. Usable directly from the Dynamic Island notch and Top Bar.",
+  "author": "shell-ninja",
+  "icon": "assets/icon.png",
+  "category": "Multimedia & Tools",
+  "entry": "bin/downloader.py",
+  "min_version": "v1.0.3",
+  "tagline": "Universal video & audio grabber with live progress for Dynamic Island & Top Bar",
+  "features": [
+    "1,800+ Platform Support: YouTube, Reddit, Instagram, Facebook, TikTok, Twitter/X, SoundCloud, and Vimeo.",
+    "Dynamic Island Expansion: Dedicated notch studio with live download speed, progress bar, ETA, and thumbnail preview.",
+    "Top Bar Integration: Interactive bar pill widget with live percentage display and obsidian quick-download popup.",
+    "Smart Audio Extraction: 1-click lossless MP3, M4A, or FLAC extraction with embedded metadata & cover art.",
+    "Resolution & Quality Control: Select from Best available, 1080p, 720p, or custom audio formats.",
+    "Clipboard Auto-Detection: Automatically detects copied media URLs for instant 1-click downloading."
+  ],
+  "targets": [
+    "Dynamic Island",
+    "Top Bar",
+    "Spotlight Omnibar",
+    "Hyprland Desktop"
+  ],
+  "settings": {
+    "enabled": true,
+    "download_dir": "~/Downloads",
+    "audio_dir": "~/Music",
+    "default_mode": "video",
+    "video_quality": "best",
+    "audio_format": "mp3",
+    "auto_clipboard": false,
+    "notify_on_complete": true
+  }
+}
