@@ -2,7 +2,7 @@
 """
 downloader.py — Hyprconf Media Downloader Backend Engine
 Powered by yt-dlp & ffmpeg.
-Provides streaming progress reporting for Dynamic Island and Top Bar Quickshell components.
+Provides streaming JSON progress reporting for Dynamic Island and Top Bar Quickshell components.
 """
 
 import sys
@@ -12,9 +12,10 @@ import json
 import time
 import argparse
 import subprocess
+import urllib.request
 from pathlib import Path
 
-# Add hyprconf venv to sys.path to access yt-dlp
+# Add hyprconf venv to sys.path to access yt-dlp and ffmpeg dependencies
 VENV_DIR = Path.home() / ".local" / "share" / "hyprconf" / "venv"
 if VENV_DIR.exists():
     for p in (VENV_DIR / "lib").glob("python*/site-packages"):
@@ -36,6 +37,14 @@ STATE_FILE = CACHE_DIR / "media_downloader_state.json"
 PID_FILE = CACHE_DIR / "media_downloader.pid"
 
 
+class QuietLogger:
+    """Suppresses yt-dlp internal stdout logging so only atomic JSON is emitted."""
+    def debug(self, msg): pass
+    def info(self, msg): pass
+    def warning(self, msg): pass
+    def error(self, msg): pass
+
+
 def load_config() -> dict:
     defaults = {
         "enabled": True,
@@ -45,7 +54,8 @@ def load_config() -> dict:
         "video_quality": "best",
         "audio_format": "mp3",
         "auto_clipboard": False,
-        "notify_on_complete": True
+        "notify_on_complete": True,
+        "browser_cookies": "auto"
     }
     if CONFIG_FILE.exists():
         try:
@@ -61,7 +71,6 @@ def emit_state(data: dict):
     """Write atomic state JSON and stream to stdout."""
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     try:
-        # Atomic file write
         temp_file = STATE_FILE.with_suffix(".tmp")
         with open(temp_file, "w", encoding="utf-8") as f:
             json.dump(data, f)
@@ -69,7 +78,7 @@ def emit_state(data: dict):
     except Exception:
         pass
 
-    # Print to stdout for QML Process listening
+    # Print pure JSON to stdout for QML Process SplitParser listening
     print(json.dumps(data), flush=True)
 
 
@@ -95,8 +104,79 @@ def save_history(entry: dict):
         pass
 
 
-def sanitize_filename(name: str) -> str:
-    return re.sub(r'[\\/*?:"<>|]', "", name).strip()
+def resolve_canonical_url(url: str) -> str:
+    """Follow HTTP 30x redirects to unshorten URLs (e.g. youtu.be, redd.it, reddit.com/r/.../s/..., v.redd.it)."""
+    url = url.strip()
+    if not (url.startswith("http://") or url.startswith("https://")):
+        return url
+
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            final_url = resp.geturl()
+            if final_url:
+                return final_url
+    except Exception:
+        pass
+    return url
+
+
+def get_base_ydl_opts(extra_opts=None) -> dict:
+    """Build robust yt-dlp options with quiet logging, node js runtime, and cookie discovery."""
+    config = load_config()
+    opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "noprogress": True,
+        "nocheckcertificate": True,
+        "logger": QuietLogger(),
+        "js_runtimes": {"node": {}},
+        "remote_components": ["ejs:github"]
+    }
+
+    # Cookie configuration
+    cookie_file = Path(config.get("cookie_file", "")) if config.get("cookie_file") else (LOCAL_HYPRCONF / "cookies.txt")
+    if cookie_file.exists():
+        opts["cookiefile"] = str(cookie_file)
+    else:
+        # Auto-detect browser cookies if configured
+        browser_pref = config.get("browser_cookies", "auto")
+        browsers_to_try = ["brave", "chrome", "firefox", "chromium"] if browser_pref == "auto" else [browser_pref]
+        for b in browsers_to_try:
+            b_dir = HOME / ".mozilla/firefox" if b == "firefox" else HOME / f".config/{b}"
+            if b_dir.exists():
+                opts["cookiesfrombrowser"] = (b,)
+                break
+
+    if extra_opts:
+        opts.update(extra_opts)
+    return opts
+
+
+def clean_error_message(err_str: str, url: str) -> str:
+    """Map raw yt-dlp error traces to clean, user-friendly error messages."""
+    s = str(err_str)
+    if "Account authentication is required" in s or ("403" in s and "reddit" in url.lower()):
+        return "Reddit requires authentication (HTTP 403). Please log in to Reddit in your browser or save cookies to ~/.local/share/hyprconf/cookies.txt"
+    if "Requested format is not available" in s:
+        return "The requested video resolution is not available for this media."
+    if "Video unavailable" in s or "Private video" in s:
+        return "This media is private or unavailable."
+    if "Sign in to confirm you’re not a bot" in s:
+        return "Platform requested anti-bot verification. Try again in a moment."
+    if "HTTP Error 429" in s:
+        return "Rate limit reached. Please wait a moment before downloading again."
+    # Remove verbose traceback or prefix
+    s = re.sub(r"^ERROR:\s*\[[^\]]+\]\s*", "", s).strip()
+    if len(s) > 180:
+        s = s[:177] + "..."
+    return s
 
 
 def get_info(url: str):
@@ -105,22 +185,20 @@ def get_info(url: str):
         emit_state({"status": "error", "error": "yt-dlp is not installed in hyprconf environment."})
         return
 
-    ydl_opts = {
-        "quiet": True,
-        "no_warnings": True,
+    resolved_url = resolve_canonical_url(url)
+    ydl_opts = get_base_ydl_opts({
         "skip_download": True,
         "extract_flat": False,
-    }
+    })
 
     try:
-        emit_state({"status": "fetching_info", "url": url})
+        emit_state({"status": "fetching_info", "url": resolved_url})
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
+            info = ydl.extract_info(resolved_url, download=False)
             if not info:
                 emit_state({"status": "error", "error": "Could not retrieve media metadata."})
                 return
 
-            # Best effort resolution extraction
             title = info.get("title", "Unknown Title")
             duration = info.get("duration", 0)
             thumbnail = info.get("thumbnail", "")
@@ -135,7 +213,7 @@ def get_info(url: str):
 
             result = {
                 "status": "info_ready",
-                "url": url,
+                "url": resolved_url,
                 "title": title,
                 "uploader": uploader,
                 "duration": duration,
@@ -146,7 +224,7 @@ def get_info(url: str):
             emit_state(result)
             return result
     except Exception as e:
-        emit_state({"status": "error", "error": str(e), "url": url})
+        emit_state({"status": "error", "error": clean_error_message(str(e), resolved_url), "url": resolved_url})
 
 
 def run_download(url: str, mode="video", quality="best", audio_format="mp3", out_dir=None):
@@ -162,10 +240,9 @@ def run_download(url: str, mode="video", quality="best", audio_format="mp3", out
         out_dir = Path(out_dir).expanduser()
 
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    # Save PID so cancel can kill it cleanly
     PID_FILE.write_text(str(os.getpid()))
 
+    resolved_url = resolve_canonical_url(url)
     current_meta = {"title": "Downloading media...", "thumbnail": "", "uploader": ""}
 
     def progress_hook(d):
@@ -175,19 +252,50 @@ def run_download(url: str, mode="video", quality="best", audio_format="mp3", out
             downloaded = d.get("downloaded_bytes", 0)
             percent = (downloaded / total * 100.0) if total > 0 else 0.0
 
-            # Raw speed string or formatted
-            speed = d.get("speed")
-            speed_str = f"{speed / (1024 * 1024):.1f} MB/s" if speed else d.get("_speed_str", "-- MB/s")
+            # Extract metadata from info_dict if available
+            info_dict = d.get("info_dict") or {}
+            if info_dict:
+                if not current_meta.get("title") or current_meta["title"] == "Downloading media...":
+                    current_meta["title"] = info_dict.get("title", current_meta.get("title", "Downloading media..."))
+                if not current_meta.get("thumbnail"):
+                    current_meta["thumbnail"] = info_dict.get("thumbnail", "")
+                if not current_meta.get("uploader"):
+                    current_meta["uploader"] = info_dict.get("uploader", "")
 
+            # Speed formatting
+            speed = d.get("speed")
+            if speed is not None:
+                try:
+                    s_val = float(speed)
+                    if s_val >= 1024 * 1024:
+                        speed_str = f"{s_val / (1024 * 1024):.1f} MB/s"
+                    elif s_val >= 1024:
+                        speed_str = f"{s_val / 1024:.0f} KB/s"
+                    else:
+                        speed_str = f"{s_val:.0f} B/s"
+                except Exception:
+                    speed_str = str(d.get("_speed_str", "-- MB/s"))
+            else:
+                speed_str = str(d.get("_speed_str", "-- MB/s"))
+
+            # ETA formatting - safely cast float to int before formatting
             eta = d.get("eta")
-            eta_str = f"{eta // 60:02d}:{eta % 60:02d}" if eta is not None else d.get("_eta_str", "--:--")
+            if eta is not None:
+                try:
+                    eta_sec = int(float(eta))
+                    eta_str = f"{eta_sec // 60:02d}:{eta_sec % 60:02d}"
+                except Exception:
+                    eta_str = str(d.get("_eta_str", "--:--"))
+            else:
+                eta_str = str(d.get("_eta_str", "--:--"))
 
             emit_state({
                 "status": "downloading",
                 "mode": mode,
-                "url": url,
-                "title": current_meta.get("title", "Downloading..."),
+                "url": resolved_url,
+                "title": current_meta.get("title", "Downloading media..."),
                 "thumbnail": current_meta.get("thumbnail", ""),
+                "uploader": current_meta.get("uploader", ""),
                 "percent": round(percent, 1),
                 "speed": speed_str,
                 "eta": eta_str,
@@ -198,23 +306,21 @@ def run_download(url: str, mode="video", quality="best", audio_format="mp3", out
             emit_state({
                 "status": "processing",
                 "mode": mode,
-                "url": url,
+                "url": resolved_url,
                 "title": current_meta.get("title", "Processing media..."),
                 "thumbnail": current_meta.get("thumbnail", ""),
+                "uploader": current_meta.get("uploader", ""),
                 "percent": 100.0,
                 "step": "Converting / Merging streams with ffmpeg..."
             })
 
-    ydl_opts = {
+    extra_opts = {
         "outtmpl": str(out_dir / "%(title)s.%(ext)s"),
         "progress_hooks": [progress_hook],
-        "quiet": True,
-        "no_warnings": True,
-        "nocheckcertificate": True,
     }
 
     if mode == "audio":
-        ydl_opts.update({
+        extra_opts.update({
             "format": "bestaudio/best",
             "postprocessors": [
                 {
@@ -231,27 +337,28 @@ def run_download(url: str, mode="video", quality="best", audio_format="mp3", out
     else:
         # Video Mode
         if quality == "1080p":
-            ydl_opts["format"] = "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best"
+            extra_opts["format"] = "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best"
         elif quality == "720p":
-            ydl_opts["format"] = "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best"
+            extra_opts["format"] = "bestvideo[height<=720]+bestaudio/best[height<=720]/best"
         else:
-            ydl_opts["format"] = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best"
-        ydl_opts["merge_output_format"] = "mp4"
+            extra_opts["format"] = "bestvideo+bestaudio/best"
+        extra_opts["merge_output_format"] = "mp4"
+
+    ydl_opts = get_base_ydl_opts(extra_opts)
 
     try:
-        emit_state({"status": "starting", "url": url, "mode": mode})
+        emit_state({"status": "starting", "url": resolved_url, "mode": mode})
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # First extract info to get title and thumbnail
-            info = ydl.extract_info(url, download=False)
-            if info:
-                current_meta["title"] = info.get("title", "Media File")
-                current_meta["thumbnail"] = info.get("thumbnail", "")
-                current_meta["uploader"] = info.get("uploader", "")
+            download_ret = ydl.extract_info(resolved_url, download=True)
+            if download_ret:
+                current_meta["title"] = download_ret.get("title", current_meta.get("title", "Media File"))
+                current_meta["thumbnail"] = download_ret.get("thumbnail", current_meta.get("thumbnail", ""))
+                current_meta["uploader"] = download_ret.get("uploader", current_meta.get("uploader", ""))
+                target_filename = ydl.prepare_filename(download_ret)
+            else:
+                target_filename = ""
 
-            # Perform the actual download
-            download_ret = ydl.extract_info(url, download=True)
-            target_filename = ydl.prepare_filename(download_ret) if download_ret else ""
             if mode == "audio":
                 target_filename = str(Path(target_filename).with_suffix(f".{audio_format}"))
             elif mode == "video" and not target_filename.endswith(".mp4"):
@@ -259,7 +366,7 @@ def run_download(url: str, mode="video", quality="best", audio_format="mp3", out
 
             complete_entry = {
                 "status": "complete",
-                "url": url,
+                "url": resolved_url,
                 "mode": mode,
                 "title": current_meta["title"],
                 "uploader": current_meta["uploader"],
@@ -286,7 +393,7 @@ def run_download(url: str, mode="video", quality="best", audio_format="mp3", out
                     pass
 
     except Exception as e:
-        emit_state({"status": "error", "error": str(e), "url": url})
+        emit_state({"status": "error", "error": clean_error_message(str(e), resolved_url), "url": resolved_url})
     finally:
         if PID_FILE.exists():
             try:
@@ -324,6 +431,7 @@ def check_clipboard() -> dict:
         r'https?://(?:www\.)?(?:youtube\.com|youtu\.be)/',
         r'https?://(?:www\.)?instagram\.com/(?:reel|p|tv)/',
         r'https?://(?:www\.)?reddit\.com/r/[^/]+/comments/',
+        r'https?://(?:www\.)?reddit\.com/r/[^/]+/s/',
         r'https?://v\.redd\.it/',
         r'https?://(?:www\.)?(?:twitter\.com|x\.com)/[^/]+/status/',
         r'https?://(?:www\.)?tiktok\.com/@',

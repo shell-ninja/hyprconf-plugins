@@ -82,28 +82,35 @@ Rectangle {
         stdout: SplitParser {
             onRead: function(line) {
                 if (!line || line.trim().length === 0) return
-                try {
-                    var data = JSON.parse(line.trim())
-                    if (data.status) root.status = data.status
-                    if (data.percent !== undefined) root.percent = data.percent
-                    if (data.speed) root.speedStr = data.speed
-                    if (data.eta) root.etaStr = data.eta
-                    if (data.title) root.currentTitle = data.title
-                    if (data.thumbnail) root.currentThumbnail = data.thumbnail
-                    if (data.uploader) root.currentUploader = data.uploader
-                    if (data.filepath) root.currentFilepath = data.filepath
-                    if (data.error) root.errorMessage = data.error
-                } catch(e) {}
+                var str = line.trim()
+                var first = str.indexOf('{')
+                var last = str.lastIndexOf('}')
+                if (first !== -1 && last !== -1 && last > first) {
+                    try {
+                        var data = JSON.parse(str.substring(first, last + 1))
+                        if (data.status) root.status = data.status
+                        if (data.percent !== undefined) root.percent = data.percent
+                        if (data.speed) root.speedStr = data.speed
+                        if (data.eta) root.etaStr = data.eta
+                        if (data.title) root.currentTitle = data.title
+                        if (data.thumbnail) root.currentThumbnail = data.thumbnail
+                        if (data.uploader) root.currentUploader = data.uploader
+                        if (data.filepath) root.currentFilepath = data.filepath
+                        if (data.error) root.errorMessage = data.error
+                    } catch(e) {}
+                }
             }
         }
-        onExited: {
+        onExited: function(exitCode) {
             if (root.status === "downloading" || root.status === "processing") {
                 // If it exited while downloading without complete status
                 if (root.percent >= 99.0) {
                     root.status = "complete"
                 } else if (root.status !== "complete") {
                     root.status = "error"
-                    root.errorMessage = "Process terminated unexpectedly."
+                    if (!root.errorMessage || root.errorMessage.length === 0) {
+                        root.errorMessage = "Process terminated unexpectedly."
+                    }
                 }
             }
         }
@@ -121,6 +128,12 @@ Rectangle {
                 }
             }
         }
+        onExited: function(exitCode) {
+            if (stdout && stdout.text && stdout.text.trim().length > 0) {
+                urlInput.text = stdout.text.trim()
+                root.activeUrl = stdout.text.trim()
+            }
+        }
     }
 
     // Process for cancellation
@@ -132,12 +145,16 @@ Rectangle {
     function startDownload() {
         var u = urlInput.text.trim()
         if (!u || u.length === 0) return
+        if (dlProcess.running) {
+            dlProcess.kill()
+        }
         root.activeUrl = u
         root.status = "downloading"
         root.percent = 0.0
         root.speedStr = "-- MB/s"
         root.etaStr = "--:--"
         root.errorMessage = ""
+        root.currentTitle = "Fetching stream..."
 
         var cmd = [root.pythonBin, root.scriptPath, "download", u, "--mode", root.downloadMode]
         if (root.downloadMode === "video") {
