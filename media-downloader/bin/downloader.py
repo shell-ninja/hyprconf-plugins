@@ -242,21 +242,42 @@ def run_download(url: str, mode="video", quality="best", audio_format="mp3", out
     out_dir.mkdir(parents=True, exist_ok=True)
     PID_FILE.write_text(str(os.getpid()))
 
+    # Clean up stale 0-byte .part files from previous abrupt terminations
+    try:
+        for f in out_dir.glob("*.part"):
+            if f.stat().st_size == 0:
+                f.unlink(missing_ok=True)
+    except Exception:
+        pass
+
     resolved_url = resolve_canonical_url(url)
-    current_meta = {"title": "Downloading media...", "thumbnail": "", "uploader": ""}
+    current_meta = {
+        "title": "Fetching media details...",
+        "thumbnail": "",
+        "uploader": ""
+    }
 
     def progress_hook(d):
         status = d.get("status")
         if status == "downloading":
             total = d.get("total_bytes") or d.get("total_bytes_estimate") or 0
             downloaded = d.get("downloaded_bytes", 0)
-            percent = (downloaded / total * 100.0) if total > 0 else 0.0
+            if total > 0:
+                percent = downloaded / total * 100.0
+            elif d.get("fragment_count"):
+                percent = (
+                    float(d.get("fragment_index", 0))
+                    / float(d.get("fragment_count", 1))
+                    * 100.0
+                )
+            else:
+                percent = 0.0
 
             # Extract metadata from info_dict if available
             info_dict = d.get("info_dict") or {}
             if info_dict:
-                if not current_meta.get("title") or current_meta["title"] == "Downloading media...":
-                    current_meta["title"] = info_dict.get("title", current_meta.get("title", "Downloading media..."))
+                if not current_meta.get("title") or current_meta["title"] == "Fetching media details...":
+                    current_meta["title"] = info_dict.get("title", current_meta.get("title", "Fetching media details..."))
                 if not current_meta.get("thumbnail"):
                     current_meta["thumbnail"] = info_dict.get("thumbnail", "")
                 if not current_meta.get("uploader"):
@@ -347,7 +368,13 @@ def run_download(url: str, mode="video", quality="best", audio_format="mp3", out
     ydl_opts = get_base_ydl_opts(extra_opts)
 
     try:
-        emit_state({"status": "starting", "url": resolved_url, "mode": mode})
+        emit_state({
+            "status": "starting",
+            "url": resolved_url,
+            "mode": mode,
+            "title": "Fetching media details...",
+            "percent": 0.0
+        })
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             download_ret = ydl.extract_info(resolved_url, download=True)
