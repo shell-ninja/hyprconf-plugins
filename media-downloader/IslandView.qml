@@ -513,7 +513,7 @@ Rectangle {
                 Row {
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 12
-                    topPadding: 8
+                    Layout.topMargin: 8
                     Repeater {
                         model: ["YouTube", "Reddit", "Instagram", "TikTok", "X / Twitter", "SoundCloud"]
                         Rectangle {
@@ -718,7 +718,7 @@ Rectangle {
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 12
-                    topPadding: 6
+                    Layout.topMargin: 6
 
                     // Open Folder
                     Rectangle {
