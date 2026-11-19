@@ -127,8 +127,38 @@ def resolve_canonical_url(url: str) -> str:
     return url
 
 
+def discover_browser_cookies(browser_pref="auto"):
+    """Auto-detect browser cookies across Brave (including Brave-Origin), Chrome, Chromium, Firefox."""
+    config_dir = HOME / ".config"
+
+    # Precedence order of candidates
+    candidates = [
+        ("brave", config_dir / "BraveSoftware" / "Brave-Origin" / "Default"),
+        ("brave", config_dir / "BraveSoftware" / "Brave-Origin"),
+        ("brave", config_dir / "BraveSoftware" / "Brave-Browser" / "Default"),
+        ("brave", config_dir / "BraveSoftware" / "Brave-Browser"),
+        ("chrome", config_dir / "google-chrome" / "Default"),
+        ("chrome", config_dir / "google-chrome"),
+        ("chromium", config_dir / "chromium" / "Default"),
+        ("chromium", config_dir / "chromium"),
+        ("firefox", HOME / ".mozilla" / "firefox"),
+    ]
+
+    if browser_pref and browser_pref != "auto":
+        candidates = [c for c in candidates if c[0] == browser_pref.lower()]
+
+    for browser_name, path in candidates:
+        if path.exists():
+            if (path / "Cookies").exists() or (path / "Network" / "Cookies").exists() or browser_name == "firefox":
+                return (browser_name, str(path))
+            if path.is_dir() and not (path / "Default").exists():
+                return (browser_name, str(path))
+
+    return None
+
+
 def get_base_ydl_opts(extra_opts=None) -> dict:
-    """Build robust yt-dlp options with quiet logging, node js runtime, and cookie discovery."""
+    """Build robust yt-dlp options with quiet logging, node js runtime, browser impersonation and cookie discovery."""
     config = load_config()
     opts = {
         "quiet": True,
@@ -140,6 +170,13 @@ def get_base_ydl_opts(extra_opts=None) -> dict:
         "remote_components": ["ejs:github"]
     }
 
+    # Browser impersonation (uses curl_cffi to match genuine Chrome TLS fingerprint, bypassing Akamai/Cloudflare/Reddit blocks)
+    try:
+        from yt_dlp.networking.impersonate import ImpersonateTarget
+        opts["impersonate"] = ImpersonateTarget.from_str("chrome")
+    except Exception:
+        pass
+
     # Cookie configuration
     cookie_file = Path(config.get("cookie_file", "")) if config.get("cookie_file") else (LOCAL_HYPRCONF / "cookies.txt")
     if cookie_file.exists():
@@ -147,12 +184,9 @@ def get_base_ydl_opts(extra_opts=None) -> dict:
     else:
         # Auto-detect browser cookies if configured
         browser_pref = config.get("browser_cookies", "auto")
-        browsers_to_try = ["brave", "chrome", "firefox", "chromium"] if browser_pref == "auto" else [browser_pref]
-        for b in browsers_to_try:
-            b_dir = HOME / ".mozilla/firefox" if b == "firefox" else HOME / f".config/{b}"
-            if b_dir.exists():
-                opts["cookiesfrombrowser"] = (b,)
-                break
+        cookie_tuple = discover_browser_cookies(browser_pref)
+        if cookie_tuple:
+            opts["cookiesfrombrowser"] = cookie_tuple
 
     if extra_opts:
         opts.update(extra_opts)
@@ -252,7 +286,7 @@ def run_download(url: str, mode="video", quality="best", audio_format="mp3", out
 
     resolved_url = resolve_canonical_url(url)
     current_meta = {
-        "title": "Fetching media details...",
+        "title": "",
         "thumbnail": "",
         "uploader": ""
     }
@@ -372,7 +406,9 @@ def run_download(url: str, mode="video", quality="best", audio_format="mp3", out
             "status": "starting",
             "url": resolved_url,
             "mode": mode,
-            "title": "Fetching media details...",
+            "title": "",
+            "thumbnail": "",
+            "uploader": "",
             "percent": 0.0
         })
 
